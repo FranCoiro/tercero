@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Las plantas – ¿Cómo se llama cada parte?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EE;
+    --leaf-dark:#4A7C3F;
+    --leaf-mid:#7FAE5C;
+    --leaf-light:#CFE3B4;
+    --berry:#E1483F;
+    --berry-dark:#B8332B;
+    --soil:#8B5A3C;
+    --soil-dark:#6B4028;
+    --ink:#33422B;
+    --gold:#F0B429;
+    --card-border:#3E5C33;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, #eef6e0 0%, transparent 45%),
+      radial-gradient(circle at 90% 85%, #f6ead0 0%, transparent 40%),
+      var(--cream);
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    padding:24px 16px 60px;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+
+  .banner{position:relative; text-align:center; margin-bottom:6px;}
+  .banner svg{width:100%;max-width:520px;height:auto;display:block;margin:0 auto;}
+  .banner h1{
+    font-family:'Caveat', cursive;
+    font-size:52px;
+    color:var(--leaf-dark);
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-58%);
+    margin:0;
+    text-shadow:0 0 6px #fff, 0 0 6px #fff;
+  }
+
+  .prompt{text-align:center; max-width:640px; margin:8px auto 26px; line-height:1.5; font-size:16px;}
+  .prompt strong{color:var(--berry-dark);}
+
+  .board{
+    position:relative;
+    background:#fff;
+    border:3px solid var(--card-border);
+    border-radius:22px;
+    padding:20px;
+    box-shadow:0 6px 0 rgba(62,92,51,0.15);
+  }
+
+  .plant-area{
+    position:relative;
+    width:100%;
+    max-width:820px;
+    margin:0 auto;
+    aspect-ratio: 820 / 640;
+  }
+  .plant-area svg#sceneSvg{width:100%;height:100%;display:block;overflow:visible;}
+
+  .slot{
+    position:absolute;
+    width:140px;
+    min-height:44px;
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:4px 10px;
+    font-weight:800;
+    font-size:15px;
+    text-align:center;
+    transition:transform .15s ease, box-shadow .15s ease, background .2s ease, border-color .2s ease;
+  }
+  .slot.dragover{ box-shadow:0 0 0 4px rgba(240,180,41,0.45); transform:scale(1.04); }
+  .slot.correct{ background:#E9F6E4; border-color:var(--leaf-dark); color:var(--leaf-dark); }
+  .slot.wrong{
+    background:#FDECEA; border-color:var(--berry-dark); color:var(--berry-dark);
+    animation:shake .35s ease;
+  }
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  .chip{ cursor:grab; padding:2px 4px; border-radius:999px; font-family:'Nunito', sans-serif; }
+  .chip:active{cursor:grabbing;}
+  .chip.placed{width:100%;}
+
+  .dot{fill:var(--gold); stroke:var(--ink); stroke-width:2;}
+
+  .tray{ margin-top:28px; display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
+  .tray .chip{
+    background:var(--leaf-light);
+    border:3px solid var(--leaf-dark);
+    color:var(--leaf-dark);
+    font-size:17px;
+    font-weight:800;
+    padding:10px 22px;
+    border-radius:999px;
+    box-shadow:0 3px 0 rgba(74,124,63,0.35);
+    user-select:none;
+  }
+  .tray .chip.used{ opacity:0.35; pointer-events:none; }
+
+  .controls{ display:flex; justify-content:center; gap:14px; margin-top:30px; flex-wrap:wrap; }
+  button{
+    font-family:'Nunito', sans-serif;
+    font-weight:800;
+    font-size:15px;
+    padding:11px 22px;
+    border-radius:999px;
+    border:3px solid var(--ink);
+    cursor:pointer;
+    background:var(--gold);
+    color:var(--ink);
+    transition:transform .15s ease;
+  }
+  button:hover{transform:translateY(-2px);}
+  button.secondary{ background:#fff; }
+
+  .feedback{ text-align:center; min-height:30px; margin-top:16px; font-size:18px; font-weight:800; }
+  .feedback.win{color:var(--leaf-dark); font-family:'Caveat', cursive; font-size:30px;}
+
+  @media (max-width:700px){
+    .slot{width:112px; font-size:12px; min-height:36px;}
+    .tray .chip{font-size:14px; padding:8px 16px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="banner">
+    <svg viewBox="0 0 520 90" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10,45 Q60,5 260,20 Q460,5 510,45 Q460,85 260,70 Q60,85 10,45 Z" fill="#CFE3B4" stroke="#7FAE5C" stroke-width="2"/>
+    </svg>
+    <h1>Las plantas</h1>
+  </div>
+
+  <p class="prompt">
+    El abuelo me ha dicho que vamos a tomar de postre fruta. ¡Qué rica! Pero primero vamos a ver la planta.<br>
+    <strong>Arrastra</strong> cada palabra hasta el globo correcto para decir cómo se llama esa parte de la planta. Ojo: ¡hay dos flores!
+  </p>
+
+  <div class="board">
+    <div class="plant-area" id="plantArea">
+      <svg id="sceneSvg" viewBox="0 0 820 640" xmlns="http://www.w3.org/2000/svg">
+        <!-- soil -->
+        <path d="M120,565 A290,75 0 0 0 700,565 Z" fill="#8B5A3C" stroke="#6B4028" stroke-width="4"/>
+        <line x1="200" y1="590" x2="200" y2="608" stroke="#6B4028" stroke-width="3" opacity="0.5"/>
+        <line x1="290" y1="602" x2="290" y2="618" stroke="#6B4028" stroke-width="3" opacity="0.5"/>
+        <line x1="540" y1="602" x2="540" y2="618" stroke="#6B4028" stroke-width="3" opacity="0.5"/>
+        <line x1="620" y1="590" x2="620" y2="608" stroke="#6B4028" stroke-width="3" opacity="0.5"/>
+
+        <!-- roots (clearly below soil line, own visual zone) -->
+        <g stroke="#C9A27A" stroke-width="5" fill="none" stroke-linecap="round">
+          <path d="M410,562 Q380,585 340,605"/>
+          <path d="M410,562 Q400,595 385,622"/>
+          <path d="M410,562 Q430,595 445,624"/>
+          <path d="M410,562 Q450,585 490,600"/>
+          <path d="M410,562 Q365,570 315,578"/>
+          <path d="M410,562 Q460,572 510,582"/>
+        </g>
+
+        <!-- stem: single clean line, top to soil -->
+        <path d="M410,562 C407,470 413,300 410,150" stroke="#4A7C3F" stroke-width="11" fill="none" stroke-linecap="round"/>
+
+        <!-- upper leaf cluster around y=230-300, clearly separate from stem tip and flower -->
+        <g>
+          <path d="M410,270 C330,235 250,250 210,310 C290,320 360,300 410,278 Z" fill="#7FAE5C" stroke="#3F6B33" stroke-width="3"/>
+          <path d="M320,265 L225,305" stroke="#3F6B33" stroke-width="2" opacity="0.6"/>
+          <path d="M410,300 C490,270 555,290 590,345 C515,355 450,330 410,308 Z" fill="#8FBC6A" stroke="#3F6B33" stroke-width="3"/>
+          <path d="M495,300 L580,340" stroke="#3F6B33" stroke-width="2" opacity="0.6"/>
+        </g>
+
+        <!-- FLOWER 1: top of stem, clearly attached at the tip -->
+        <g id="flower1">
+          <circle cx="410" cy="120" r="11" fill="#F0B429" stroke="#B8332B" stroke-width="2"/>
+          <g fill="#FFFFFF" stroke="#E1483F" stroke-width="2">
+            <ellipse cx="410" cy="95" rx="11" ry="17"/>
+            <ellipse cx="410" cy="145" rx="11" ry="17"/>
+            <ellipse cx="385" cy="120" rx="17" ry="11"/>
+            <ellipse cx="435" cy="120" rx="17" ry="11"/>
+          </g>
+        </g>
+
+        <!-- branch to FLOWER 2, lower-left, own pedicel so it's clearly attached -->
+        <path d="M410,455 Q360,440 320,432" stroke="#4A7C3F" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <g id="flower2">
+          <circle cx="300" cy="428" r="10" fill="#F0B429" stroke="#B8332B" stroke-width="2"/>
+          <g fill="#FFFFFF" stroke="#E1483F" stroke-width="2">
+            <ellipse cx="300" cy="405" rx="10" ry="15"/>
+            <ellipse cx="300" cy="451" rx="10" ry="15"/>
+            <ellipse cx="277" cy="428" rx="15" ry="10"/>
+            <ellipse cx="323" cy="428" rx="15" ry="10"/>
+          </g>
+        </g>
+
+        <!-- branch to FRUIT (clear apple), lower-right -->
+        <path d="M410,475 Q460,462 500,455" stroke="#4A7C3F" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <g id="appleGroup">
+          <path d="M500,478 C470,478 452,505 455,532 C458,556 478,572 500,572 C522,572 542,556 545,532 C548,505 530,478 500,478 Z"
+                fill="#E1483F" stroke="#8B221C" stroke-width="3"/>
+          <path d="M500,478 C494,472 494,464 500,458 C506,464 506,472 500,478 Z" fill="#E1483F" stroke="#8B221C" stroke-width="2"/>
+          <path d="M500,458 C500,448 498,440 496,434" stroke="#6B4028" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M497,438 C508,432 518,436 522,446 C511,448 502,446 497,438 Z" fill="#7FAE5C" stroke="#3F6B33" stroke-width="2"/>
+          <ellipse cx="486" cy="505" rx="7" ry="11" fill="#FFFFFF" opacity="0.35"/>
+        </g>
+
+        <!-- lower leaves small accent near soil (purely decorative, not tied to any dot) -->
+        <path d="M410,540 C450,545 470,560 470,575 C445,572 420,560 410,545 Z" fill="#6FA24F" stroke="#3F6B33" stroke-width="2" opacity="0.85"/>
+
+        <!-- connection dots + dashed lines to slots -->
+        <g stroke="#33422B" stroke-width="2" stroke-dasharray="6,5" fill="none">
+          <line x1="410" y1="120" x2="700" y2="70"/>
+          <line x1="230" y1="290" x2="90" y2="230"/>
+          <line x1="409" y1="330" x2="700" y2="330"/>
+          <line x1="300" y1="428" x2="90" y2="470"/>
+          <line x1="500" y1="500" x2="700" y2="500"/>
+          <line x1="378" y1="584" x2="90" y2="595"/>
+        </g>
+        <circle class="dot" cx="410" cy="120" r="7"/>
+        <circle class="dot" cx="230" cy="290" r="7"/>
+        <circle class="dot" cx="409" cy="330" r="7"/>
+        <circle class="dot" cx="300" cy="428" r="7"/>
+        <circle class="dot" cx="500" cy="500" r="7"/>
+        <circle class="dot" cx="378" cy="584" r="7"/>
+      </svg>
+
+      <!-- HTML slots positioned over the svg (6 total: 2 flor, 1 fruta, 1 hoja, 1 tallo, 1 raiz) -->
+      <div class="slot" data-answer="flor" style="top:1%; left:83%;">?</div>
+      <div class="slot" data-answer="hoja" style="top:33%; left:2%;">?</div>
+      <div class="slot" data-answer="tallo" style="top:49%; left:83%;">?</div>
+      <div class="slot" data-answer="flor" style="top:68%; left:2%;">?</div>
+      <div class="slot" data-answer="fruta" style="top:76%; left:83%;">?</div>
+      <div class="slot" data-answer="raiz" style="top:90%; left:2%;">?</div>
+    </div>
+
+    <div class="tray" id="tray">
+      <div class="chip" draggable="true" data-word="flor">flor</div>
+      <div class="chip" draggable="true" data-word="flor">flor</div>
+      <div class="chip" draggable="true" data-word="fruta">fruta</div>
+      <div class="chip" draggable="true" data-word="tallo">tallo</div>
+      <div class="chip" draggable="true" data-word="hoja">hoja</div>
+      <div class="chip" draggable="true" data-word="raiz">raíz</div>
+    </div>
+
+    <div class="controls">
+      <button id="checkBtn">Comprobar</button>
+      <button id="resetBtn" class="secondary">Empezar de nuevo</button>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<script>
+  const labels = {flor:'flor', fruta:'fruta', raiz:'raíz', tallo:'tallo', hoja:'hoja'};
+
+  // give every tray chip a unique id so duplicate words (flor, flor) work independently
+  document.querySelectorAll('.tray .chip').forEach((chip, i)=>{
+    chip.dataset.id = 'chip'+i;
+    chip.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', JSON.stringify({word:chip.dataset.word, id:chip.dataset.id}));
+      setTimeout(()=>chip.style.opacity='0.4',0);
+    });
+    chip.addEventListener('dragend', ()=>{ chip.style.opacity='1'; });
+  });
+
+  function trayChipById(id){
+    return document.querySelector('.tray .chip[data-id="'+id+'"]');
+  }
+
+  document.querySelectorAll('.slot').forEach(slot=>{
+    slot.addEventListener('dragover', e=>{ e.preventDefault(); slot.classList.add('dragover'); });
+    slot.addEventListener('dragleave', ()=> slot.classList.remove('dragover'));
+    slot.addEventListener('drop', e=>{
+      e.preventDefault();
+      slot.classList.remove('dragover');
+      let data;
+      try{ data = JSON.parse(e.dataTransfer.getData('text/plain')); }catch(err){ return; }
+      if(!data || !data.word) return;
+
+      // if slot already had a chip, return that source chip to the tray
+      const existing = slot.querySelector('.chip');
+      if(existing && existing.dataset.sourceId){
+        const back = trayChipById(existing.dataset.sourceId);
+        if(back) back.classList.remove('used');
+        existing.remove();
+      }
+
+      const traySource = trayChipById(data.id);
+      if(traySource) traySource.classList.add('used');
+
+      slot.textContent = '';
+      slot.classList.remove('correct','wrong');
+      const placedChip = document.createElement('div');
+      placedChip.className = 'chip placed';
+      placedChip.textContent = labels[data.word];
+      placedChip.dataset.word = data.word;
+      placedChip.dataset.sourceId = data.id;
+      placedChip.draggable = true;
+      placedChip.style.background = 'transparent';
+      placedChip.style.color = 'var(--ink)';
+      placedChip.addEventListener('dragstart', ev=>{
+        ev.dataTransfer.setData('text/plain', JSON.stringify({word:data.word, id:data.id}));
+        setTimeout(()=>{
+          placedChip.remove();
+          const back = trayChipById(data.id);
+          if(back) back.classList.remove('used');
+          slot.textContent='?';
+        },0);
+      });
+      slot.appendChild(placedChip);
+    });
+  });
+
+  document.getElementById('checkBtn').addEventListener('click', ()=>{
+    const slots = document.querySelectorAll('.slot');
+    let allCorrect = true;
+    let filled = 0;
+    slots.forEach(slot=>{
+      const chip = slot.querySelector('.chip');
+      slot.classList.remove('correct','wrong');
+      if(!chip){ allCorrect = false; return; }
+      filled++;
+      if(chip.dataset.word === slot.dataset.answer){
+        slot.classList.add('correct');
+      } else {
+        slot.classList.add('wrong');
+        allCorrect = false;
+      }
+    });
+    const feedback = document.getElementById('feedback');
+    feedback.classList.remove('win');
+    if(filled < slots.length){
+      feedback.textContent = 'Coloca una palabra en cada globo antes de comprobar 🌱';
+    } else if(allCorrect){
+      feedback.textContent = '¡Muy bien! Has aprendido las partes de la planta 🍎🌿';
+      feedback.classList.add('win');
+    } else {
+      feedback.textContent = 'Casi... revisa los globos en rojo e inténtalo de nuevo 🤔';
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    document.querySelectorAll('.slot').forEach(slot=>{
+      slot.innerHTML = '?';
+      slot.classList.remove('correct','wrong');
+    });
+    document.querySelectorAll('.tray .chip').forEach(c=>c.classList.remove('used'));
+    const feedback = document.getElementById('feedback');
+    feedback.textContent = '';
+    feedback.classList.remove('win');
+  });
+</script>
+</body>
+</html>
